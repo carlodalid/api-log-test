@@ -1,5 +1,7 @@
 # api-log-ingest
 
+> **Note:** This project was created with [Claude Code](https://claude.com/claude-code). Session details are available in [`/logs`](./logs).
+
 Reads a JSONL log of API requests and writes a single JSON report to stdout covering
 traffic counts, bad input, and token-bucket rate-limit violations.
 
