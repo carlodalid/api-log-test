@@ -50,22 +50,15 @@ describe("cli end to end", () => {
       valid_requests: 23,
       malformed_lines: 2,
       invalid_records: 5,
-      unique_clients: 3,
-      unique_endpoints: 3,
       time_range: { start: "2026-09-10T12:00:00Z", end: "2026-09-10T12:00:09Z" },
     });
   });
 
   it("counts all valid traffic, throttled requests included", () => {
-    expect(report.counts).toEqual({
-      total_requests: 23,
-      by_client: { "burst-co": 15, "quiet-co": 3, "steady-co": 5 },
-      by_endpoint: { "/v1/health": 3, "/v1/search": 15, "/v1/users": 5 },
-      by_status_class: { "1xx": 0, "2xx": 16, "3xx": 1, "4xx": 5, "5xx": 1 },
-    });
-    // The bursty client's 15 requests all survive into the counts even though
-    // five of them are flagged.
-    expect(report.counts.by_client["burst-co"]).toBe(15);
+    // 23 valid requests, five of which are flagged — the flagged ones are still
+    // counted, because they really were served.
+    expect(report.counts).toEqual({ total_requests: 23 });
+    expect(report.rate_limiting.total_throttled_requests).toBe(5);
   });
 
   it("flags only the bursty client", () => {

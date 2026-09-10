@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { aggregate } from "../src/aggregate.ts";
 import { analyzeRateLimits } from "../src/rate-limit.ts";
 import type { RateLimitConfig, ValidRecord } from "../src/types.ts";
 
@@ -61,15 +60,12 @@ describe("analyzeRateLimits", () => {
     }
   });
 
-  it("leaves throttled requests in the traffic counts — nothing is filtered out", () => {
+  it("counts throttled requests in the client's total — nothing is filtered out", () => {
     const records = burst("acme", "2026-01-01T00:00:00Z", 5);
-    const result = analyzeRateLimits(records, CONFIG, MANY_SAMPLES);
-    const counts = aggregate(records);
+    const client = analyzeRateLimits(records, CONFIG, MANY_SAMPLES).violating_clients[0]!;
 
-    expect(result.violating_clients[0]!.throttled_count).toBe(2);
-    expect(counts.total_requests).toBe(5);
-    expect(counts.by_client["acme"]).toBe(5);
-    expect(counts.by_endpoint["/v1/search"]).toBe(5);
+    expect(client.throttled_count).toBe(2);
+    expect(client.total_requests).toBe(5);
   });
 
   it("declares itself report-only", () => {
@@ -149,30 +145,5 @@ describe("analyzeRateLimits", () => {
     const client = analyzeRateLimits(records, CONFIG, MANY_SAMPLES).violating_clients[0]!;
     expect(client.first_throttled_at).toBe("2026-01-01T00:00:00Z");
     expect(client.last_throttled_at).toBe("2026-01-01T00:00:01Z");
-  });
-});
-
-describe("aggregate", () => {
-  it("counts by client, endpoint and status class with sorted keys", () => {
-    const records = [
-      record("zeta", "2026-01-01T00:00:00Z", "/v1/z"),
-      record("alpha", "2026-01-01T00:00:00Z", "/v1/a"),
-      record("alpha", "2026-01-01T00:00:00Z", "/v1/a"),
-    ];
-    records[0]!.request.status_code = 503;
-    records[1]!.request.status_code = 404;
-
-    const counts = aggregate(records);
-    expect(Object.keys(counts.by_client)).toEqual(["alpha", "zeta"]);
-    expect(counts.by_client).toEqual({ alpha: 2, zeta: 1 });
-    expect(counts.by_endpoint).toEqual({ "/v1/a": 2, "/v1/z": 1 });
-    expect(counts.by_status_class).toEqual({ "1xx": 0, "2xx": 1, "3xx": 0, "4xx": 1, "5xx": 1 });
-    expect(counts.total_requests).toBe(3);
-  });
-
-  it("emits every status class even when the log has none of them", () => {
-    expect(aggregate([]).by_status_class).toEqual({
-      "1xx": 0, "2xx": 0, "3xx": 0, "4xx": 0, "5xx": 0,
-    });
   });
 });

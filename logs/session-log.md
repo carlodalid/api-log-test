@@ -244,3 +244,97 @@ within limit, 5 throttled) whose 15 requests all still appear in the traffic cou
 - Per-`(client, endpoint)` bucket scope — considered and declined during clarification.
 - Streaming rate-limit evaluation without the in-memory sort (§3.3).
 - Git init / first commit — the directory is still not a git repository.
+
+---
+
+## Session 2 — 2026-09-10
+
+**Outcome:** report output narrowed to the essentials. 48 tests passing (down from
+50 — two suites were removed with the code they covered), `tsc --noEmit` clean.
+
+### 1. Prompts
+
+**2.1 — Simplify the report** (~15:30 local)
+
+> Let's clean up the report output to make it simpler. The keys we wanna remove
+> including their implementations - unique_clients, unique_endpoints, simplify counts
+> object to just total_requests.
+
+### 2. Design decisions
+
+#### 2.1 Report surface narrowed to totals only
+
+Removed from `summary`: `unique_clients`, `unique_endpoints`. Reduced `counts` from
+four keys to one:
+
+```jsonc
+// before                              // after
+"counts": {                            "counts": { "total_requests": 23 }
+  "total_requests": 23,
+  "by_client":       { ... },
+  "by_endpoint":     { ... },
+  "by_status_class": { ... }
+}
+```
+
+This walks back part of the original brief in 1.1, which asked for "request counts -
+total, per client, per endpoint". Flagged at the time and confirmed by the request, so
+the narrower surface is the intended one.
+
+Two consequences worth remembering, both raised before the change was made:
+
+- **`by_client` was the only place non-violating clients appeared.** The report now
+  names a client *only* if it was throttled. There is no longer any way to see the
+  traffic shape of well-behaved clients.
+- **`status_code` is now validated but never reported.** It is still required, still
+  range-checked to `100`–`599`, and a bad value still lands the record in
+  `invalid_records` — but it no longer surfaces anywhere in the output. Noted in the
+  README so the field does not look vestigial.
+
+#### 2.2 `src/aggregate.ts` deleted rather than hollowed out
+
+With the breakdowns gone, `aggregate()` reduced to `records.length`, which does not
+earn a module, an import and a test suite. The file was removed; `total_requests` is
+computed inline in `buildReport`, and `timeRange()` — its only other export, still
+needed for `summary.time_range` — moved into `src/report.ts`, its sole caller.
+
+This supersedes Session 1 §3.9's "all count maps emit sorted keys" and "all five
+status classes always present": there are no maps left to sort. Determinism of the
+output now rests entirely on the `violating_clients` ordering, and the end-to-end
+stability test still covers it.
+
+#### 2.3 Tests removed with the code, not repointed at nothing
+
+- The whole `describe("aggregate")` suite went with the module.
+- The report-only invariant test that asserted throttled requests survive into
+  `counts.by_client` / `by_endpoint` was **rewritten, not deleted** — it now asserts
+  the same guarantee against the surviving surface (`client.total_requests` counts
+  throttled requests, and `counts.total_requests` is 23 while 5 are flagged). That
+  invariant is the point of the tool (Session 1 §3.1) and needed to keep a test.
+
+### 3. Files touched
+
+| File | Change |
+| --- | --- |
+| `src/types.ts` | `Counts` down to one key; `unique_*` off `Summary` |
+| `src/report.ts` | Dropped `uniqueCount`; absorbed `timeRange`; inlined the total |
+| `src/aggregate.ts` | **Deleted** |
+| `tests/rate-limit.test.ts` | `aggregate` suite removed; invariant test rewritten |
+| `tests/cli.test.ts` | `summary` and `counts` expectations updated |
+| `README.md` | Output example, layout table, and the `status_code` note |
+
+### 4. Final state
+
+```
+src/cli.ts          164 lines
+src/parse.ts        161
+src/types.ts        112
+src/rate-limit.ts   112
+src/report.ts        63
+src/token-bucket.ts  63
+tests/              520         48 tests across 4 files
+```
+
+Verification: `pnpm typecheck` clean; `pnpm test` 48/48 passing; report re-run against
+the fixture and inspected; grepped for stale references to every removed key and to
+`aggregate` — none remain in `src/`, `tests/` or `README.md`.

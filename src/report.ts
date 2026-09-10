@@ -1,4 +1,3 @@
-import { aggregate, timeRange } from "./aggregate.ts";
 import { analyzeRateLimits } from "./rate-limit.ts";
 import type {
   InvalidRecord,
@@ -21,8 +20,22 @@ export interface ReportInput {
   generatedAt?: Date;
 }
 
-function uniqueCount<T>(records: readonly ValidRecord[], pick: (r: ValidRecord) => T): number {
-  return new Set(records.map(pick)).size;
+/** Earliest and latest request time, as they appeared in the input. */
+function timeRange(
+  records: readonly ValidRecord[],
+): { start: string | null; end: string | null } {
+  let first: ValidRecord | undefined;
+  let last: ValidRecord | undefined;
+
+  for (const record of records) {
+    if (first === undefined || record.timestampMs < first.timestampMs) first = record;
+    if (last === undefined || record.timestampMs > last.timestampMs) last = record;
+  }
+
+  return {
+    start: first?.request.timestamp ?? null,
+    end: last?.request.timestamp ?? null,
+  };
 }
 
 /** Assemble the final report. Counts stay complete even when samples are cut. */
@@ -38,11 +51,9 @@ export function buildReport(input: ReportInput): Report {
       valid_requests: records.length,
       malformed_lines: malformed.length,
       invalid_records: invalid.length,
-      unique_clients: uniqueCount(records, (r) => r.request.client_id),
-      unique_endpoints: uniqueCount(records, (r) => r.request.endpoint),
       time_range: timeRange(records),
     },
-    counts: aggregate(records),
+    counts: { total_requests: records.length },
     rate_limiting: analyzeRateLimits(records, input.config, maxSamples),
     malformed_lines: malformed.slice(0, maxSamples),
     malformed_lines_truncated: malformed.length > maxSamples,

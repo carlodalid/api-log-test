@@ -88,9 +88,6 @@ export interface RateLimitSection {
 
 export interface Counts {
   total_requests: number;
-  by_client: Record<string, number>;
-  by_endpoint: Record<string, number>;
-  by_status_class: Record<string, number>;
 }
 
 export interface Summary {
@@ -99,8 +96,6 @@ export interface Summary {
   valid_requests: number;
   malformed_lines: number;
   invalid_records: number;
-  unique_clients: number;
-  unique_endpoints: number;
   time_range: { start: string | null; end: string | null };
 }
 

@@ -46,7 +46,9 @@ One JSON object per line, with all five fields required:
 ```
 
 `request_id`, `timestamp`, `client_id` and `endpoint` are non-empty strings;
-`status_code` is an integer in `100`–`599`. `timestamp` must be ISO-8601 — a
+`status_code` is an integer in `100`–`599` — it is validated so that a bad value is
+caught as an invalid record, but it does not otherwise appear in the report.
+`timestamp` must be ISO-8601 — a
 timestamp with no timezone is read as **UTC**, so the same file produces the same
 report on every machine. Unknown extra fields are ignored rather than rejected;
 client log shapes drift, and failing on an added field would turn a harmless
@@ -66,9 +68,9 @@ Both carry the 1-based line number and a 200-character echo of the offending lin
 **This tool never denies anything.** It replays already-served traffic through a
 token bucket to answer "who would have been throttled under these parameters".
 Requests are labelled `within_limit` or `throttled`; a throttled request is still
-counted in `counts.total_requests`, `counts.by_client` and `counts.by_endpoint`,
-because it really was served. The report carries `"mode": "report_only"` so a
-downstream consumer cannot mistake it for an enforcement log.
+counted in `counts.total_requests` and in its client's `total_requests`, because it
+really was served. The report carries `"mode": "report_only"` so a downstream
+consumer cannot mistake it for an enforcement log.
 
 Details of the model:
 
@@ -90,13 +92,14 @@ Details of the model:
   `capacity`.
 
 Only clients with at least one throttled request appear in `violating_clients`
-(worst first, ties broken by `client_id`). Per-client totals for *everyone* are in
-`counts.by_client`.
+(worst first, ties broken by `client_id`). The report deliberately carries no
+per-client or per-endpoint breakdown of all traffic — a client is named only if it
+was throttled.
 
 ## Output
 
-Every map is emitted with sorted keys and a fixed set of status classes, so two runs
-over the same file diff cleanly — only `generated_at` changes. `--max-samples` caps
+`violating_clients` is ordered deterministically, so two runs over the same file diff
+cleanly — only `generated_at` changes. `--max-samples` caps
 the length of the sample lists; counts always stay complete, and a `truncated` flag
 marks any list that was cut.
 
@@ -107,15 +110,9 @@ marks any list that was cut.
   "summary": {
     "total_lines": 31, "blank_lines": 1, "valid_requests": 23,
     "malformed_lines": 2, "invalid_records": 5,
-    "unique_clients": 3, "unique_endpoints": 3,
     "time_range": { "start": "2026-09-10T12:00:00Z", "end": "2026-09-10T12:00:09Z" }
   },
-  "counts": {
-    "total_requests": 23,
-    "by_client": { "burst-co": 15, "quiet-co": 3, "steady-co": 5 },
-    "by_endpoint": { "/v1/health": 3, "/v1/search": 15, "/v1/users": 5 },
-    "by_status_class": { "1xx": 0, "2xx": 16, "3xx": 1, "4xx": 5, "5xx": 1 }
-  },
+  "counts": { "total_requests": 23 },
   "rate_limiting": {
     "algorithm": "token_bucket",
     "mode": "report_only",
@@ -157,7 +154,6 @@ marks any list that was cut.
 | `src/parse.ts` | One line in, `ok` / `malformed` / `invalid` / `blank` out |
 | `src/token-bucket.ts` | Clockless token bucket; `classify()`, not `tryConsume()` |
 | `src/rate-limit.ts` | Replays sorted records through one bucket per client |
-| `src/aggregate.ts` | Counts by client, endpoint and status class |
 | `src/report.ts` | Assembles the final report object |
 | `src/types.ts` | Shared types, including the report shape |
 | `fixtures/sample.jsonl` | Clean, bursty, out-of-order, malformed and invalid lines |
