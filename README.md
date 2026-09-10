@@ -63,7 +63,13 @@ from a client bug:
 
 Both carry the 1-based line number and a 200-character echo of the offending line.
 
-## Rate limiting is report-only
+## Assumptions and rate-limiting implementation
+
+One of the main design decisions for this was to use token bucket rate limiting
+for the following reason:
+- The purpose of this script was mainly for reporting and we're not actually
+denying any requests, rather we want to identify which client is hitting a specific
+endpoint at an unreasonable rate given a certain time period
 
 **This tool never denies anything.** It replays already-served traffic through a
 token bucket to answer "who would have been throttled under these parameters".
