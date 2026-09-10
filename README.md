@@ -39,6 +39,36 @@ node src/cli.ts fixtures/sample.jsonl --capacity 5 --refill-rate 0.5
 Exit code is `0` for any successful report — including one full of violations — and
 `1` for a usage or I/O failure. The report goes to stdout; errors go to stderr.
 
+## Solution design
+
+End-to-end, the CLI does the following:
+
+1. **Stream** the input file line by line (`src/cli.ts`) — the file is never loaded
+   into memory as a whole, so its size doesn't bound memory use.
+2. **Parse & classify** each line (`src/parse.ts`) into one of four outcomes: `blank`,
+   `ok` (valid record), `malformed` (not JSON at all), or `invalid` (JSON, but fails
+   the record schema — see "Input format" below for the exact validation rules).
+3. **Accumulate** valid records in memory, alongside running counts and the capped
+   malformed/invalid sample lists.
+4. **Sort** all valid records by `(timestamp, line number)` so replay happens in
+   non-decreasing chronological order regardless of on-disk order (see
+   "Assumptions and rate-limiting implementation" below for why this matters).
+5. **Replay** the sorted records through one token bucket per `client_id`
+   (`src/token-bucket.ts`, `src/rate-limit.ts`), labelling each request
+   `within_limit` or `throttled`.
+6. **Assemble** the final report object (`src/report.ts`) and write it to stdout as
+   JSON (see "Output" below for the exact shape).
+
+| Path | Role |
+| --- | --- |
+| `src/cli.ts` | Argument parsing, streaming file read, JSON to stdout |
+| `src/parse.ts` | One line in, `ok` / `malformed` / `invalid` / `blank` out |
+| `src/token-bucket.ts` | Clockless token bucket; `classify()`, not `tryConsume()` |
+| `src/rate-limit.ts` | Replays sorted records through one bucket per client |
+| `src/report.ts` | Assembles the final report object |
+| `src/types.ts` | Shared types, including the report shape |
+| `fixtures/sample.jsonl` | Clean, bursty, out-of-order, malformed and invalid lines |
+
 ## Input format
 
 One JSON object per line, with all five fields required:
@@ -153,18 +183,6 @@ marks any list that was cut.
   "invalid_records_truncated": false
 }
 ```
-
-## Layout
-
-| Path | Role |
-| --- | --- |
-| `src/cli.ts` | Argument parsing, streaming file read, JSON to stdout |
-| `src/parse.ts` | One line in, `ok` / `malformed` / `invalid` / `blank` out |
-| `src/token-bucket.ts` | Clockless token bucket; `classify()`, not `tryConsume()` |
-| `src/rate-limit.ts` | Replays sorted records through one bucket per client |
-| `src/report.ts` | Assembles the final report object |
-| `src/types.ts` | Shared types, including the report shape |
-| `fixtures/sample.jsonl` | Clean, bursty, out-of-order, malformed and invalid lines |
 
 ## Development
 
