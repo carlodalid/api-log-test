@@ -1,0 +1,21 @@
+{
+  "name": "api-log-ingest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ingests JSONL API request logs and emits a JSON report of traffic counts, bad input, and token-bucket rate-limit violations.",
+  "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.4",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
+  }
+}

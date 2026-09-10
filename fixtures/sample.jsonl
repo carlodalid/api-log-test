@@ -1,0 +1,31 @@
+{"request_id": "steady-1", "timestamp": "2026-09-10T12:00:00Z", "client_id": "steady-co", "endpoint": "/v1/users", "status_code": 200}
+{"request_id": "steady-2", "timestamp": "2026-09-10T12:00:02Z", "client_id": "steady-co", "endpoint": "/v1/users", "status_code": 200}
+{"request_id": "steady-3", "timestamp": "2026-09-10T12:00:04Z", "client_id": "steady-co", "endpoint": "/v1/users", "status_code": 200}
+{"request_id": "steady-4", "timestamp": "2026-09-10T12:00:06Z", "client_id": "steady-co", "endpoint": "/v1/users", "status_code": 200}
+{"request_id": "steady-5", "timestamp": "2026-09-10T12:00:08Z", "client_id": "steady-co", "endpoint": "/v1/users", "status_code": 200}
+{"request_id": "burst-1", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 429}
+{"request_id": "burst-2", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-3", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-4", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 429}
+{"request_id": "burst-5", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-6", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-7", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 429}
+{"request_id": "burst-8", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-9", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-10", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 429}
+{"request_id": "burst-11", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-12", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-13", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 429}
+{"request_id": "burst-14", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+{"request_id": "burst-15", "timestamp": "2026-09-10T12:00:00.000Z", "client_id": "burst-co", "endpoint": "/v1/search", "status_code": 200}
+
+{"request_id": "late-2", "timestamp": "2026-09-10T12:00:09Z", "client_id": "quiet-co", "endpoint": "/v1/health", "status_code": 200}
+{"request_id": "late-1", "timestamp": "2026-09-10T12:00:03Z", "client_id": "quiet-co", "endpoint": "/v1/health", "status_code": 500}
+{"request_id": "extra-1", "timestamp": "2026-09-10T12:00:04Z", "client_id": "quiet-co", "endpoint": "/v1/health", "status_code": 301, "region": "us-east-1", "latency_ms": 42}
+{"request_id": "broken-1", "timestamp": 
+not json at all
+{"request_id": "missing-status", "timestamp": "2026-09-10T12:00:05Z", "client_id": "bad-co", "endpoint": "/v1/a"}
+{"request_id": "bad-ts", "timestamp": "March 5, 2026", "client_id": "bad-co", "endpoint": "/v1/a", "status_code": 200}
+{"request_id": "str-status", "timestamp": "2026-09-10T12:00:06Z", "client_id": "bad-co", "endpoint": "/v1/a", "status_code": "200"}
+{"request_id": "", "timestamp": "2026-09-10T12:00:07Z", "client_id": "bad-co", "endpoint": "/v1/a", "status_code": 200}
+[1, 2, 3]
